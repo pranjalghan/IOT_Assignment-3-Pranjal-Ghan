@@ -1,0 +1,62 @@
+MATLAB CODE TO - Display the sensor data values received during the last five hours from all environmental station of a specified sensor.
+
+% Channel ID and Read API Key
+channelID = 2483890;
+readAPIKey = 'V3DZ0Z0AE5MRRUFV';
+
+% Manually select the field number for the environmental metric
+% 1 for Temperature, 2 for Humidity, 3 for CO2 levels
+fieldNum = 2; % Adjust this number as needed
+
+% Define the list of environmental metrics
+metrics = {'Temperature', 'Humidity', 'CO2 levels'};
+
+% Available metrics and indicate the selected one
+disp('Available Environmental Metrics:');
+for i = 1:length(metrics)
+    if i == fieldNum
+        fprintf('-> %d. %s (Selected)\n', i, metrics{i});
+    else
+        fprintf('   %d. %s\n', i, metrics{i});
+    end
+end
+
+% Map fieldNum to metric name for display
+if fieldNum >= 1 && fieldNum <= length(metrics)
+    selectedMetric = metrics{fieldNum};
+else
+    disp('Invalid selection. Defaulting to Humidity.');
+    selectedMetric = metrics{1};
+    fieldNum = 1;
+end
+
+% Date and Time Settings
+endDate = datetime('now', 'TimeZone', 'local');
+startDate = endDate - hours(5);
+
+% Convert dates to strings in the format required by ThingSpeak API
+startDateStr = datestr(startDate, 'yyyy-mm-dd HH:MM:SS');
+endDateStr = datestr(endDate, 'yyyy-mm-dd HH:MM:SS');
+
+% Construct the URL for the ThingSpeak API to fetch field data
+baseUrl = 'https://api.thingspeak.com/';
+readUrl = sprintf('%schannels/%d/fields/%d.json?api_key=%s&start=%s&end=%s', ...
+                  baseUrl, channelID, fieldNum, readAPIKey, ...
+                  startDateStr, endDateStr);
+
+% Use webread to fetch the data from ThingSpeak
+options = weboptions('ContentType', 'json');
+data = webread(readUrl, options);
+
+% Check if data is available and process it
+if ~isempty(data) && isfield(data, 'feeds')
+    fprintf('Sensor Data Values (%s) Received During the Last Five Hours:\n', selectedMetric);
+    for i = 1:length(data.feeds)
+        timestamp = data.feeds(i).created_at;
+        valueStr = sprintf('field%d', fieldNum); % Construct the field value string dynamically
+        value = data.feeds(i).(valueStr); % Use dynamic field names to fetch the value
+        fprintf('%s: %s\n', timestamp, value);
+    end
+else
+    fprintf('No data received for %s.\n', selectedMetric);
+end
