@@ -1,0 +1,31 @@
+MATLAB CODE TO - Display the latest sensor data values received from all the sensors of a specified environmental station.
+
+ % channel ID
+channelID = 2483890;
+% Read API Key 
+readAPIKey = 'V3DZ0Z0AE5MRRUFV'; 
+
+% URL for the ThingSpeak API
+baseUrl = 'https://api.thingspeak.com/';
+readUrl = sprintf('%schannels/%d/feeds/last.json?api_key=%s', baseUrl, channelID, readAPIKey);
+
+% Use webread to fetch the latest data from ThingSpeak
+options = weboptions('ContentType', 'json');
+latestDataOfAllSensors = webread(readUrl, options);
+
+% Display the latest sensor data values
+
+% fields 1-Temperature, 2-Humidity and 3-CO2 
+if ~isempty(latestDataOfAllSensors)
+    temperature = latestDataOfAllSensors.field1;
+    humidity = latestDataOfAllSensors.field2;
+    co2 = latestDataOfAllSensors.field3;
+    
+    fprintf('Latest Sensor Data of Temperature,Humidity and CO2 is:\n');
+    fprintf('Temperature: %s°C\n', temperature);
+    fprintf('Humidity: %s%%\n', humidity);
+    fprintf('CO2: %sppm\n', co2);
+else
+    fprintf('No data received.\n');
+end
+
